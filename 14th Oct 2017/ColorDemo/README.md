@@ -157,10 +157,7 @@ Then you could see that your dashboard is clean and nothing is running like pods
         $ kubectl create -f color-pod.yml 
         $ kubectl get pods
         $ kubectl create -f color-rc.yml 
-        $ kubectl create -f color-pod.yml 
-        $ kubectl create -f color-rc.yml 
         $ kubectl get rcs
-        $ kubectl get pods
         $ kubectl describe pod red
         $ kubectl create -f color-svc.yml 
         $ kubectl get svc
