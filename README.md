@@ -1,3 +1,3 @@
 # KubernetesMeetup
 
-# Kubernetes and Bluemix Meetup
+# Kubernetes Sample Applications
