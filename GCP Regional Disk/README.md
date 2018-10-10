@@ -5,15 +5,15 @@ In this lab you will learn how to configure a highly available application by de
 Steps to complete this lab:
 
 
-    Create a regional Kubernetes Engine cluster.
+1) Create a regional Kubernetes Engine cluster.
 
-    Create a Kubernetes StorageClass resource that is configured for replicated zones.
+2) Create a Kubernetes StorageClass resource that is configured for replicated zones.
 
-    Deploy WordPress with a regional disk that uses the StorageClass.
+3) Deploy WordPress with a regional disk that uses the StorageClass.
 
-    Simulate a zone failure by deleting a node.
+4) Simulate a zone failure by deleting a node.
 
-    Verify that the WordPress app and data migrate successfully to another replicated zone.
+5) Verify that the WordPress app and data migrate successfully to another replicated zone.
 
 Login to GCP console and start a cloud shell to start creating the kubernetes cluster.
 
@@ -34,7 +34,7 @@ Now create a standard Kubernetes Engine cluster (this will take a little while, 
     --num-nodes=1 \
     --node-locations=us-west1-b,us-west1-c
 
-You could the output as below,
+You could see the output as below,
 
     Creating cluster repd...done.
     Created [https://container.googleapis.com/v1beta1/projects/qwiklabs-gcp-e8f5f22705c770ab/zones/us-west1/clusters/repd].
@@ -51,11 +51,11 @@ The gcloud command has also automatically configured the kubectl command to conn
 
 Now that you have your Kubernetes cluster running, you'll do the following three things:
 
-    Install Helm (a toolset for managing Kubernetes packages)
+1) Install Helm (a toolset for managing Kubernetes packages)
 
-    Create the Kubernetes StorageClass that is used by the regional persistent disk
+2) Create the Kubernetes StorageClass that is used by the regional persistent disk
 
-    Deploy WordPress
+3) Deploy WordPress
 
 *Install and initialize Helm to install the chart package*
 
@@ -63,18 +63,18 @@ The chart package, which is installed with Helm, contains everything you need to
 
 1) Install Helm locally in your Cloud Shell instance by running:
 
-    curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get > get_helm.sh
-    chmod 700 get_helm.sh
-    ./get_helm.sh
+       curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get > get_helm.sh
+       chmod 700 get_helm.sh
+       ./get_helm.sh
 
 2) Initialize Helm:
 
-    kubectl create serviceaccount tiller --namespace kube-system
-    kubectl create clusterrolebinding tiller-cluster-rule \
-    --clusterrole=cluster-admin \
-    --serviceaccount=kube-system:tiller
-    helm init --service-account=tiller
-    until (helm version --tiller-connection-timeout=1 >/dev/null 2>&1); do echo "Waiting for tiller install..."; sleep 2; done && echo "Helm install complete"
+       kubectl create serviceaccount tiller --namespace kube-system
+       kubectl create clusterrolebinding tiller-cluster-rule \
+       --clusterrole=cluster-admin \
+       --serviceaccount=kube-system:tiller
+       helm init --service-account=tiller
+       until (helm version --tiller-connection-timeout=1 >/dev/null 2>&1); do echo "Waiting for tiller install..."; sleep 2; done && echo "Helm install complete"
 
 Helm is now installed in your cluster.
 
@@ -111,41 +111,42 @@ Now that we have our StorageClass configured, Kubernetes automatically attaches 
 
 1) Deploy the WordPress chart that is configured to use the `StorageClass` that you created earlier:
 
-    helm install --name wp-repd \
-    --set persistence.storageClass=repd-west1-b-c \
-    stable/wordpress \
-    --set mariadb.persistence.storageClass=repd-west1-b-c
+       helm install --name wp-repd \
+       --set persistence.storageClass=repd-west1-b-c \
+       stable/wordpress \
+       --set mariadb.persistence.storageClass=repd-west1-b-c
 
 2) List out available word-press pods:
 
-    kubectl get pods
-    NAME                                 READY     STATUS    RESTARTS   AGE
-    wp-repd-mariadb-79444cd49b-lx8jq     1/1       Running   0          35m
-    wp-repd-wordpress-7654c85b66-gz6nd   1/1       Running   0          35m  
+       kubectl get pods
+       NAME                                 READY     STATUS    RESTARTS   AGE
+       wp-repd-mariadb-79444cd49b-lx8jq     1/1       Running   0          35m
+       wp-repd-wordpress-7654c85b66-gz6nd   1/1       Running   0          35m  
+
 3) Run the following command which waits for the service load balancer's external IP address to be created:
 
-    while [[ -z $SERVICE_IP ]]; do SERVICE_IP=$(kubectl get svc wp-repd-wordpress -o jsonpath='{.status.loadBalancer.ingress[].ip}'); echo "Waiting for service external IP..."; sleep 2; done; echo http://$SERVICE_IP/admin
+       while [[ -z $SERVICE_IP ]]; do SERVICE_IP=$(kubectl get svc wp-repd-wordpress -o jsonpath='{.status.loadBalancer.ingress[].ip}'); echo "Waiting for service external IP..."; sleep 2; done; echo http://$SERVICE_IP/admin
 
 4) Verify that the persistent disk was created:
 
-    while [[ -z $PV ]]; do PV=$(kubectl get pvc wp-repd-wordpress -o jsonpath='{.spec.volumeName}'); echo "Waiting for PV..."; sleep 2; done
+       while [[ -z $PV ]]; do PV=$(kubectl get pvc wp-repd-wordpress -o jsonpath='{.spec.volumeName}'); echo "Waiting for PV..."; sleep 2; done
 
-    kubectl describe pv $PV
+       kubectl describe pv $PV
 
 5) Get the URL for the WordPress admin page :
 
-    echo http://$SERVICE_IP/admin
+       echo http://$SERVICE_IP/admin
 
 6) Click on the link to open WordPress in a new tab in your browser.
 
 7) Back in Cloud Shell, get a username and password so you can log in to the app:
 
-    cat - <<EOF
-    Username: user
-    Password: $(kubectl get secret --namespace default wp-repd-wordpress -o jsonpath="{.data.wordpress-password}" | base64 --decode)
-    EOF
+       cat - <<EOF
+       Username: user
+       Password: $(kubectl get secret --namespace default wp-repd-wordpress -o jsonpath="{.data.wordpress-password}" | base64 --decode)
+       EOF
 
-8) Go to the WordPress tab and log in with the username and password that was returned.
+8) Go to the `WordPress` tab and log in with the username and password that was returned.
 
 You now have a working deployment of WordPress that is backed by regional persistent disks in two zones.
 
@@ -155,15 +156,15 @@ Next you will simulate a zone failure and watch Kubernetes move your workload to
 
 1) Obtain the current node of the WordPress pod:
 
-    NODE=$(kubectl get pods -l app=wp-repd-wordpress -o jsonpath='{.items..spec.nodeName}')
+       NODE=$(kubectl get pods -l app=wp-repd-wordpress -o jsonpath='{.items..spec.nodeName}')
 
-    ZONE=$(kubectl get node $NODE -o jsonpath="{.metadata.labels['failure-domain\.beta\.kubernetes\.io/zone']}")
+       ZONE=$(kubectl get node $NODE -o jsonpath="{.metadata.labels['failure-domain\.beta\.kubernetes\.io/zone']}")
 
-    IG=$(gcloud compute instance-groups list --filter="name~gke-repd-default-pool zone:(${ZONE})" --format='value(name)')
+       IG=$(gcloud compute instance-groups list --filter="name~gke-repd-default-pool zone:(${ZONE})" --format='value(name)')
 
-    echo "Pod is currently on node ${NODE}"
+       echo "Pod is currently on node ${NODE}"
 
-    echo "Instance group to delete: ${IG} for zone: ${ZONE}"
+       echo "Instance group to delete: ${IG} for zone: ${ZONE}"
 
 Example Output:
 
@@ -183,13 +184,13 @@ Take note of `Node` column. You are going to delete this node to simulate the zo
 
 2) Now run the following to delete the instance group for the node where the WordPress pod is running, click Y to continue deleting:
 
-    gcloud compute instance-groups managed delete ${IG} --zone ${ZONE}
+       gcloud compute instance-groups managed delete ${IG} --zone ${ZONE}
 
 Kubernetes is now detecting the failure and migrates the pod to a node in another zone.
 
 3) Verify that both the WordPress pod and the persistent volume migrated to the node that is in the other zone:
 
-    kubectl get pods -l app=wp-repd-wordpress -o wide
+       kubectl get pods -l app=wp-repd-wordpress -o wide
 
 Example Output:
 
@@ -200,7 +201,7 @@ Make sure the node that is displayed is different from the node in the previous 
 
 4) Once the new service has a Running status, open the WordPress admin page in your browser from the link displayed in the command output:
 
-    echo http://$SERVICE_IP/admin
+       echo http://$SERVICE_IP/admin
 
 You have attached a regional persistent disk to a node that is in a different zone.
 
